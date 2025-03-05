@@ -39,15 +39,14 @@ init_board_from_file :: proc(filename: string, cells: ^Board) {
 
 	defer delete(data)
 
-	iter := string(data)
-	lines := strings.split_lines(iter, context.allocator)
+	lines := strings.split_lines(string(data), context.allocator)
 	defer delete(lines)
 
 	for line, y in lines {
 		assert(y <= BOARD_HEIGHT, "y index out of bounds")
-		for c, x in line {
+		for char, x in line {
 			assert(x <= BOARD_WIDTH, "x index out of bounds")
-			if c == '#' {
+			if char == '#' {
 				cells[y][x].is_alive = true
 			}
 		}
@@ -75,6 +74,7 @@ run :: proc(board: ^Board) {
 	}
 
 	// start all worker threads, one per cell
+	// slow as fuq and dumb especially since each thread does barley any work
 	for y in 0 ..< len(board) {
 		for x in 0 ..< len(board[y]) {
 			data := Data{x, y, &neighbour_buffer, board, &neighbour_barrier, &update_barrier}
@@ -103,7 +103,7 @@ run :: proc(board: ^Board) {
 
 		time.sleep(75 * time.Millisecond)
 
-		// Wait for all workers to finish updating the board
+		// wait for all workers to finish updating the board
 		sync.barrier_wait(&update_barrier)
 	}
 
